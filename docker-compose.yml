@@ -3,25 +3,37 @@ version: '3'
 volumes:
   pg_data:
   static:
+  media: # Добавили вольюм для медиа-файлов
 
 services:
   db:
     image: postgres:13
+    env_file: .env # Добавили переменные, чтобы база знала логин/пароль
     volumes:
       - pg_data:/var/lib/postgresql/data
+
   backend:
     build: ./backend/
     env_file: .env
+    depends_on:
+      - db
+    volumes:
+      - static:/app/static/ # Сюда бэкенд будет собирать статику
+      - media:/app/media/   # А сюда сохранять картинки котиков
+
   frontend:
-    env_file: .env
     build: ./frontend/
     command: cp -r /app/build/. /static/
     volumes:
-      - static:/static
+      - static:/static/
+
   gateway:
     build: ./nginx/
-    env_file: .env
     ports:
-      - 9000:80
+      - "80:80" # По заданию обычно 80 порт, но если тестируешь на 9000, можно оставить
     volumes:
-      - static:/static
+      - static:/static/
+      - media:/app/media/ # Чтобы Nginx мог раздавать картинки
+    depends_on:
+      - backend
+      - frontend

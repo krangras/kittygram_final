@@ -1,0 +1,22 @@
+# backend/Dockerfile
+FROM python:3.9-slim
+
+# Устанавливаем рабочую директорию
+WORKDIR /app
+
+# Устанавливаем зависимости для работы с Postgres и сборки пакетов
+RUN apt-get update && apt-get install -y build-essential libpq-dev && rm -rf /var/lib/apt/lists/*
+
+# Сначала копируем зависимости, чтобы Docker закешировал этот слой
+COPY requirements.txt .
+
+# Обновляем pip и устанавливаем зависимости
+RUN pip install --upgrade pip
+RUN pip install -r requirements.txt --no-cache-dir
+
+# Копируем всё остальное
+COPY . .
+
+# Запускаем gunicorn. 
+# kittygram_backend.wsgi — это путь к файлу wsgi.py внутри папки проекта
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "kittygram_backend.wsgi"]
